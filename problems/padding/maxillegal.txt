@@ -1,0 +1,144 @@
+import argparse
+功能：导入 argparse 模块，用于命令行参数解析。它可以轻松解析和处理从命令行传递的参数和选项。
+import numpy as np
+功能：导入 numpy 模块，为科学计算提供支持，尤其是多维数组的操作。
+import os
+功能：导入 os 模块，用于操作文件系统，例如文件路径管理和文件操作。
+import time
+功能：导入 time 模块，用于处理时间相关操作，比如记录时间戳或计算运行时长。
+from datetime import timedelta
+功能：从 datetime 模块导入 timedelta 类，用于表示时间差，比如计算运行时间或任务间隔。
+from scipy.spatial import distance_matrix
+功能：从 scipy.spatial 模块中导入 distance_matrix 函数，用于计算两个集合中所有点对之间的欧氏距离或其他类型的距离矩阵。
+from utils import run_all_in_pool
+功能：从本地 utils 模块中导入 run_all_in_pool 函数（需要查看 utils 的具体实现以了解此函数的作用）。通常用于并行化运行任务。
+from utils.data_utils import check_extension, load_dataset, save_dataset
+功能：从 utils.data_utils 模块中导入以下函数：
+check_extension：检查文件扩展名。
+load_dataset：加载数据集。
+save_dataset：保存数据集。
+from subprocess import check_call, check_output, CalledProcessError
+功能：从 subprocess 模块中导入以下方法：
+check_call：运行系统命令，若命令执行失败则引发异常。
+check_output：运行系统命令并返回其输出。
+CalledProcessError：表示系统命令执行失败时的错误类型。
+
+assert (
+    torch.arange(pi.size(1), out=pi.data.new()).view(1, -1).expand_as(pi) ==
+    pi.data.sort(1)[0]
+).all(), "Invalid tour"
+功能：验证路径 pi 的合法性。
+使用 torch.arange 生成一个从 0 到 n-1 的序列，与 pi 的元素逐一比较，确保 pi 是有效的排列。
+pi.data.sort(1)[0] 对每行路径进行排序后，检查它是否与 0 到 n-1 的序列一致。
+如果验证失败，抛出异常 AssertionError 并提示 Invalid tour。
+
+n_events = dataset.size(-2)
+功能：获取 dataset 的事件数量，通常是张量的倒数第二维大小。
+
+# Gather dataset in order of tour
+sorted_data = dataset.gather(1, pi.unsqueeze(-1).expand_as(dataset))  # reorder row according to pi
+功能：根据路径 pi 的顺序重新排列 dataset 的行。
+pi.unsqueeze(-1) 将 pi 的最后一维扩展为列向量。
+.expand_as(dataset) 使其与 dataset 的形状一致。
+dataset.gather 根据 pi 的索引重新排列事件数据。
+
+t = sorted_data[:, :, [0]]
+is_arrival = sorted_data[:, :, [1]]
+is_departure = sorted_data[:, :, [2]]
+one_hot_cat = sorted_data[:, :, 3:6]
+turn_time_by_cat = sorted_data[:, :, 6:9]
+功能：提取重新排列后的事件数据的不同特征：
+t：时间（列 0）。
+is_arrival：是否为到达事件（列 1）。
+is_departure：是否为出发事件（列 2）。
+one_hot_cat：事件的类别（列 3-5，独热编码形式）。
+turn_time_by_cat：根据类别的转弯时间（列 6-8）。
+
+is_arrival_departure = is_arrival.matmul(is_departure.transpose(1, 2))
+功能：计算到达和离开事件之间的连接关系矩阵。
+is_arrival 和 is_departure 分别是到达和离开的指示矩阵。
+矩阵乘法生成到达和离开的配对情况。
+
+turn_time_by_connection = one_hot_cat.matmul(turn_time_by_cat.transpose(1, 2))
+功能：根据事件类别计算连接所需的转弯时间矩阵。
+one_hot_cat 和 turn_time_by_cat 通过矩阵乘法匹配类别。
+
+dt = t.transpose(1, 2) - t
+功能：计算事件之间的时间差矩阵。
+
+all_connection_legality = (dt >= turn_time_by_connection).int()
+功能：判断连接是否合法：
+如果事件之间的时间差大于等于所需转弯时间，则为合法连接（值为 1），否则为非法（值为 0）。
+
+lost_connection = all_connection_legality.tril(-1) * is_arrival_departure
+illegal_connection = (1 - all_connection_legality).triu(1) * is_arrival_departure
+功能：
+lost_connection：未能形成连接的情况（只考虑下三角部分）。
+illegal_connection：形成非法连接的情况（只考虑上三角部分）。
+
+return lost_connection.sum(dim=(1, 2)) + 1000.0 * illegal_connection.sum(dim=(1, 2)), None
+功能：计算路径的总代价。
+代价计算：
+lost_connection.sum(dim=(1, 2))：丢失连接的总数。
+illegal_connection.sum(dim=(1, 2))：非法连接的总数，每个非法连接的惩罚为 1000。
+返回：
+第一个值为路径代价。
+第二个值为占位符，目前为 None。
+
+def max_illegal(dataset):
+功能：从给定的 dataset 中找到最大非法连接事件并计算相应的路径代价。
+输入：
+dataset：包含事件的特征张量，形状为 (batch_size, graph_size, feature_size)。
+输出：
+total_dist：计算的总路径代价。
+pi：重新排序的路径索引。
+
+batch_size, graph_size, _ = dataset.size()
+功能：解构 dataset 的形状，提取以下信息：
+batch_size：数据集中的批次大小。
+graph_size：图中事件的数量。
+_：特征维度，未使用。
+
+t = dataset[:, :, [0]]
+is_arrival = dataset[:, :, [1]]
+is_departure = dataset[:, :, [2]]
+one_hot_cat = dataset[:, :, 3:6]
+turn_time_by_cat = dataset[:, :, 6:9]
+功能：提取事件的不同特征：
+t：事件的时间信息（第 0 列）。
+is_arrival：是否为到达事件（第 1 列）。
+is_departure：是否为出发事件（第 2 列）。
+one_hot_cat：事件的类别（第 3-5 列，独热编码）。
+turn_time_by_cat：基于类别的转弯时间（第 6-8 列）。
+
+is_arrival_departure = is_arrival.matmul(is_departure.transpose(1, 2))
+功能：计算到达事件和离开事件之间的连接关系矩阵。
+
+turn_time_by_connection = one_hot_cat.matmul(turn_time_by_cat.transpose(1, 2))
+功能：根据事件类别计算连接所需的转弯时间矩阵。
+
+dt = t.transpose(1, 2) - t
+功能：计算事件之间的时间差矩阵。
+
+all_connection_legality = (dt >= turn_time_by_connection).int()
+功能：判断每个连接是否合法：
+如果事件之间的时间差大于或等于所需转弯时间，则为合法连接（值为 1），否则为非法连接（值为 0）。
+
+is_illegal_arrival_departure = is_arrival_departure * (1 - all_connection_legality)
+功能：标记非法的到达-离开连接。
+
+has_illegal_connection, max_illegal_event = is_illegal_arrival_departure.flip(dims=[2]).max(dim=2)
+功能：
+is_illegal_arrival_departure.flip(dims=[2])：沿最后一维（时间维度）翻转矩阵。
+.max(dim=2)：沿时间维度找到每行的最大值。
+has_illegal_connection：是否存在非法连接（值为 1 表示有非法连接）。
+max_illegal_event：最后一个非法连接事件的索引。
+
+max_illegal_event = torch.where(has_illegal_connection == 1, graph_size - 1 - max_illegal_event, -1)
+功能：调整非法连接的索引：
+如果存在非法连接，则将索引从翻转后调整为原始顺序。
+如果没有非法连接，则返回 -1。
+
+total_dist, _ = get_costs(dataset, pi)
+功能：调用 get_costs 函数，计算重新排序路径的总代价。
+
