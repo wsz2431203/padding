@@ -1,21 +1,6 @@
-# Attention, Learn to Solve Routing Problems!
+# Attention, Learn to Solve Padding Problem!
 
 Attention-based model for learning to solve the PADDING problem, using REINFORCE with a greedy rollout baseline for training.
-
-
-## Paper
-For more details, please see our paper [Attention, Learn to Solve Routing Problems!](https://openreview.net/forum?id=ByxBFsRqYm) which has been accepted at [ICLR 2019](https://iclr.cc/Conferences/2019). If this code is useful for your work, please cite our paper:
-
-```
-@inproceedings{
-    kool2018attention,
-    title={Attention, Learn to Solve Routing Problems!},
-    author={Wouter Kool and Herke van Hoof and Max Welling},
-    booktitle={International Conference on Learning Representations},
-    year={2019},
-    url={https://openreview.net/forum?id=ByxBFsRqYm},
-}
-``` 
 
 ## Dependencies
 
@@ -38,10 +23,10 @@ python run.py --graph_size 20 --baseline rollout --run_name 'padding20_rollout'
 
 ### Generating data
 
-Training data is generated on the fly. To generate validation and test data (same as used in the paper) for all problems:
+Training data is generated on the fly. To generate validation and test data (same as used in the paper) for the padding problem:
 ```bash
-python generate_data.py --problem all --name validation --seed 4321
-python generate_data.py --problem all --name test --seed 1234
+python generate_data.py --problem padding --name validation --seed 4321
+python generate_data.py --problem padding --name test --seed 1234
 ```
 
 ### Training
@@ -107,5 +92,4 @@ Thanks to [pemami4911/neural-combinatorial-rl-pytorch](https://github.com/pemami
 This repository includes adaptions of the following repositories as baselines:
 * https://github.com/MichelDeudon/encode-attend-navigate
 * https://github.com/mc-ride/orienteering
-* https://github.com/jordanamecler/PCTSP
-* https://github.com/rafael2reis/salesman
+
